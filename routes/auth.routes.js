@@ -4,6 +4,10 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const sendEmail = require("../utils/sendEmail");
 const sendWhatsAppMessage = require("../utils/sendWhatsAppMessage");
+const sendWhatsAppOTP = require("../utils/sendWhatsAppOTP");
+const sendWhatsAppAccountDetails = require("../utils/sendWhatsAppAccountDetails");
+const cftUser = require("../models/cftUser");
+const axios = require("axios");
 
 const router = express.Router();
 const JWT_SECRET = "your_secret_key"; // Use env variable in production
@@ -114,6 +118,130 @@ router.get("/allUser", async (req, res) => {
     res.status(200).json(users);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
+  }
+});
+
+router.post("/signup/send-otp", async (req, res) => {
+  // console.log("📥 Body received from frontend:", req.body);
+
+  const { name, phone, city, password, email } = req.body;
+
+  if (!name || !phone || !city || !password || !email)
+    return res.status(400).json({ error: "All fields are required." });
+
+  // console.log("📦 Data stored in OTP STORE:", {
+  //   name,
+  //   phone,
+  //   city,
+  //   password,
+  //   email,
+  // });
+
+  const otp = generateOtp();
+
+  otpStore.set(phone, { otp, name, city, password, email });
+
+  const result = await sendWhatsAppOTP(phone, otp);
+
+  if (!result.success)
+    return res.status(500).json({ error: "Failed to send WhatsApp OTP." });
+
+  res.json({ message: "OTP sent via WhatsApp." });
+});
+
+router.post("/signup/verify", async (req, res) => {
+  const { phone, otp } = req.body;
+
+  if (!phone || !otp)
+    return res.status(400).json({ error: "Phone and OTP required." });
+
+  const stored = otpStore.get(phone);
+  console.log("📦 Stored OTP data:", stored);
+
+  if (!stored || stored.otp !== otp)
+    return res.status(400).json({ error: "Invalid OTP." });
+
+  // Correct extraction
+  const { name, city, password, email } = stored; // name comes directly from OTP store
+  // const name = fullName; // map correctly
+
+  // Log actual data being sent to API
+  console.log("📤 Data to send CFT API:", {
+    name,
+    phone,
+    city,
+    password,
+  });
+
+  try {
+    const response = await axios.post(
+      "https://v1-cfttraders.com/api/v1/register/index",
+      {
+        name,
+        phone,
+        city,
+        password,
+      },
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
+
+    console.log("📩 CFT API Response:", response.data);
+
+    if (response.data.status === "error") {
+      return res.status(200).json({ error: response.data.message });
+    }
+
+    const accountId = response.data.account_id;
+
+    const existing = await cftUser.findOne({ phone });
+    if (existing) {
+      return res.status(400).json({
+        error: "User already exists with this phone number",
+      });
+    }
+
+    const newUser = new cftUser({
+      name, // <-- full name stored as name
+      phone,
+      city,
+      email,
+      password,
+      accountId,
+      isVerified: true,
+    });
+
+    await newUser.save();
+
+    // Clear OTP
+    otpStore.delete(phone);
+
+    if (email) {
+      await sendEmail({
+        to: email,
+        subject: "Your Trading Account is Ready",
+        html: `
+          <p>Dear ${name},</p>
+          <p>Your trading account has been created successfully.</p>
+
+          <p><b>Account ID:</b> ${accountId}</p>
+          <p><b>Password:</b> ${password}</p>
+
+          <p>Welcome to Close Friends Traders!</p>
+        `,
+      });
+    }
+
+    return res.json({
+      message: "Account created successfully.",
+      accountId,
+    });
+  } catch (error) {
+    console.error("❌ Error:", error);
+    return res.status(500).json({ error: "Server error. Try again." });
   }
 });
 
