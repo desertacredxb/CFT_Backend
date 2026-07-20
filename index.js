@@ -15,6 +15,7 @@ const authRoutes = require("./routes/auth.routes");
 const BlogRoute = require("./routes/blog.routes");
 const OfferROutes = require("./routes/offer.Routes");
 const chatRoutes = require("./routes/chatRoutes");
+// require("./newsletterScheduler");
 
 
 require("dotenv").config();
@@ -30,7 +31,7 @@ app.use("/api", popupLeadRoute);
 app.use("/api/auth", authRoutes);
 // app.use("/api/enquiry", ChatBot);
 app.use("/api/blogs", BlogRoute);
-app.use("/api/offer", OfferROutes);
+// app.use("/api/offer", OfferROutes);
 app.use("/api/chat", chatRoutes);
 app.get("/", (req, res) => {
   res.send("API LIVE");
@@ -47,4 +48,3 @@ app.listen(process.env.PORT, async () => {
   console.log(`🚀 Server is listening on port ${process.env.PORT}`);
 });
 
-require("./newsletterScheduler");
