@@ -1,9 +1,9 @@
 const dns = require("node:dns");
 
 // Force Node to use public DNS instead of the broken localhost resolver
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
+// dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
-console.log("DNS Servers:", dns.getServers());
+// console.log("DNS Servers:", dns.getServers());
 
 const express = require("express");
 const cors = require("cors");
