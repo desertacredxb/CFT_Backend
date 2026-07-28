@@ -144,4 +144,59 @@ router.get("/popup-lead-graph", async (req, res) => {
   }
 });
 
+
+// POST /api/popup-lead/direct - Create lead directly without OTP verification
+router.post("/direct", async (req, res) => {
+  const { fullName, phone, city, email, marketSegment } = req.body;
+  if (!fullName || !phone || !city || !email) {
+    return res.status(400).json({ error: "fullName, phone, city, and email are required." });
+  }
+
+  try {
+    let lead = await Lead.findOne({ email });
+
+    if (lead) {
+      lead.fullName = fullName;
+      lead.phone = phone;
+      lead.city = city;
+      if (marketSegment) lead.marketSegment = marketSegment;
+      lead.isVerified = true;
+    } else {
+      lead = new Lead({ fullName, phone, city, email, marketSegment: marketSegment || "", isVerified: true });
+    }
+
+    await lead.save();
+    await sendWhatsAppMessage(phone);
+
+    // Send welcome email
+    await sendEmail({
+      to: email,
+      subject: "You're In! Start Trading Smarter with Close Friends Traders",
+      html: `
+        <p>Hi ${fullName},</p>
+        <p>Welcome to <strong>Close Friends Traders</strong>!</p>
+        <p>Your account is now verified. Here's what's next:</p>
+        <ul>
+          <li>Zero commission trading</li>
+          <li>Advanced tools & real-time insights</li>
+          <li>Fast deposits and withdrawals</li>
+        </ul>
+        <p>
+          <a href="https://closefriendstraders.com/" style="padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">Start Trading Now</a>
+        </p>
+        <p>Need help? We're available 24/7 at support@closefriendstraders.com</p>
+        <p>– The Close Friends Traders Team</p>
+      `,
+    });
+
+    res.status(201).json({
+      message: "Your request has been received. We'll contact you shortly.",
+    });
+  } catch (error) {
+    console.error("Error creating lead:", error);
+    res.status(500).json({ error: "Failed to create lead." });
+  }
+});
+
+
 module.exports = router;
