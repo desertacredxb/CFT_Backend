@@ -10,6 +10,35 @@ const {
 
 const newLead = require("../models/Lead.Model");
 
+// Proxy endpoint to handle third-party registration securely without CORS issues
+router.post("/register-user", async (req, res) => {
+  try {
+    const response = await fetch(
+      "https://v2.mastertrader.co.in/api/apiUserRegister",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key":
+            process.env.MT_AUTH_KEY || "X9dPa4Lm7QvR2nHt8YsK5cZw1FuJ6eGb",
+        },
+        body: JSON.stringify(req.body),
+      },
+    );
+
+    const data = await response.json();
+    return res.status(response.status).json(data);
+  } catch (error) {
+    console.error("Error proxying to 3rd party API:", error);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to connect to registration service",
+      });
+  }
+});
+
 router.post("/", createLead);
 router.get("/", getLeads);
 
