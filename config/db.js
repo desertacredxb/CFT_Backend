@@ -3,14 +3,14 @@ require("dotenv").config();
 
 const connect = () => {
   const MongoURL = process.env.MongoURL;
-  const DB = process.env.DB;
 
-  mongoose
-    // .connect(`${MongoURL}/${DB}`, {})
-    .connect(`${MongoURL}`, {})
+  // IMPORTANT: Added 'return' here
+  return mongoose
+    .connect(MongoURL, {})
     .then(() => console.log("🚀 DataBase Connected"))
     .catch((reason) => {
-      console.log(`💩 Unable to connect to DataBase \n${reason}`);
+      console.error(`💩 Unable to connect to DataBase \n${reason}`);
+      throw reason;
     });
 };
 

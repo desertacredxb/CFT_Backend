@@ -1,9 +1,7 @@
-// const dns = require("node:dns");
+const dns = require("node:dns");
 
-// Force Node to use public DNS instead of the broken localhost resolver
-// dns.setServers(["1.1.1.1", "8.8.8.8"]);
-
-// console.log("DNS Servers:", dns.getServers());
+// Force Node to use public DNS servers to resolve MongoDB SRV records on Render
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 const express = require("express");
 const cors = require("cors");
@@ -11,19 +9,15 @@ const { connect } = require("./config/db");
 const subscriberRoutes = require("./routes/subscriber.routes");
 const popupLeadRoute = require("./routes/popup.routes");
 const authRoutes = require("./routes/auth.routes");
-// const ChatBot = require("./routes/enquiry.routes");
 const BlogRoute = require("./routes/blog.routes");
-const OfferROutes = require("./routes/offer.Routes");
 const chatRoutes = require("./routes/chatRoutes");
 const leadRoutes = require("./routes/leadRoutes");
-// require("./newsletterScheduler");
 
 require("dotenv").config();
 
 const app = express();
 
 app.use(express.json());
-// app.use(cors());
 app.use(
   cors({
     origin: [
@@ -34,26 +28,28 @@ app.use(
     credentials: true,
   }),
 );
+
 // Routes
-// app.use("/", subscriberRoutes);
 app.use("/api", popupLeadRoute);
 app.use("/api/auth", authRoutes);
 app.use("/api/leads", leadRoutes);
-// app.use("/api/enquiry", ChatBot);
 app.use("/api/blogs", BlogRoute);
-// app.use("/api/offer", OfferROutes);
 app.use("/api/chat", chatRoutes);
+
 app.get("/", (req, res) => {
   res.send("API LIVE");
 });
 
-// Start server
-app.listen(process.env.PORT, async () => {
-  try {
-    await connect();
-  } catch (error) {
-    console.error("❌ DB connection failed:", error);
-  }
+const PORT = process.env.PORT || 8000;
 
-  console.log(`🚀 Server is listening on port ${process.env.PORT}`);
-});
+// Start server ONLY AFTER MongoDB connects
+connect()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`🚀 Server listening on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("❌ Database failed to connect, server not started:", err);
+    process.exit(1);
+  });
