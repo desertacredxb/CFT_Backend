@@ -1,9 +1,9 @@
 const dns = require("node:dns");
 
 // Force Node to use public DNS instead of the broken localhost resolver
-// dns.setServers(["1.1.1.1", "8.8.8.8"]);
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
-// console.log("DNS Servers:", dns.getServers());
+console.log("DNS Servers:", dns.getServers());
 
 const express = require("express");
 const cors = require("cors");
@@ -15,6 +15,7 @@ const authRoutes = require("./routes/auth.routes");
 const BlogRoute = require("./routes/blog.routes");
 const OfferROutes = require("./routes/offer.Routes");
 const chatRoutes = require("./routes/chatRoutes");
+const leadRoutes = require("./routes/leadRoutes");
 // require("./newsletterScheduler");
 
 
@@ -23,12 +24,18 @@ require("dotenv").config();
 const app = express();
 
 app.use(express.json());
-app.use(cors());
-
+// app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://v2.mastertrader.co.in"],
+    credentials: true,
+  })
+);
 // Routes
 // app.use("/", subscriberRoutes);
 app.use("/api", popupLeadRoute);
 app.use("/api/auth", authRoutes);
+app.use("/api/leads", leadRoutes);
 // app.use("/api/enquiry", ChatBot);
 app.use("/api/blogs", BlogRoute);
 // app.use("/api/offer", OfferROutes);
