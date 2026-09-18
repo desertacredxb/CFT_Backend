@@ -1,9 +1,9 @@
-const dns = require("node:dns");
+// const dns = require("node:dns");
 
 // Force Node to use public DNS instead of the broken localhost resolver
-dns.setServers(["1.1.1.1", "8.8.8.8"]);
+// dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
-console.log("DNS Servers:", dns.getServers());
+// console.log("DNS Servers:", dns.getServers());
 
 const express = require("express");
 const cors = require("cors");
@@ -18,7 +18,6 @@ const chatRoutes = require("./routes/chatRoutes");
 const leadRoutes = require("./routes/leadRoutes");
 // require("./newsletterScheduler");
 
-
 require("dotenv").config();
 
 const app = express();
@@ -27,9 +26,13 @@ app.use(express.json());
 // app.use(cors());
 app.use(
   cors({
-    origin: ["http://localhost:5173", "https://v2.mastertrader.co.in"],
+    origin: [
+      "http://localhost:5173",
+      "https://v2.mastertrader.co.in",
+      "https://www.mastertrader.co.in",
+    ],
     credentials: true,
-  })
+  }),
 );
 // Routes
 // app.use("/", subscriberRoutes);
@@ -54,4 +57,3 @@ app.listen(process.env.PORT, async () => {
 
   console.log(`🚀 Server is listening on port ${process.env.PORT}`);
 });
-
