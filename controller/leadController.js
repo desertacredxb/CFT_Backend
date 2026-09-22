@@ -1,5 +1,29 @@
 const newLeads = require("../models/Lead.Model");
 
+// Same mobile number or email = same lead. Email only counts when it is filled,
+// otherwise every lead submitted without an email would match the first one.
+const findDuplicateLead = async (leadPhone, leadEmail) => {
+  const duplicateFilters = [{ phone: leadPhone }];
+  if (leadEmail) {
+    duplicateFilters.push({ email: leadEmail });
+  }
+
+  return newLeads.findOne({ $or: duplicateFilters });
+};
+
+const duplicateLeadResponse = (existingLead, leadPhone) => {
+  const isSamePhone = existingLead.phone === leadPhone;
+
+  return {
+    success: false,
+    duplicate: true,
+    field: isSamePhone ? "phone" : "email",
+    message: isSamePhone
+      ? "We have already received your request with this mobile number. Our team will contact you shortly."
+      : "We have already received your request with this email. Our team will contact you shortly.",
+  };
+};
+
 // 1. Create a new Lead
 exports.createLead = async (req, res) => {
   try {
@@ -26,24 +50,10 @@ exports.createLead = async (req, res) => {
     }
 
     // Reject a second lead for the same mobile number or email
-    const duplicateFilters = [{ phone: leadPhone }];
-    if (leadEmail) {
-      duplicateFilters.push({ email: leadEmail });
-    }
-
-    const existingLead = await newLeads.findOne({ $or: duplicateFilters });
+    const existingLead = await findDuplicateLead(leadPhone, leadEmail);
 
     if (existingLead) {
-      const isSamePhone = existingLead.phone === leadPhone;
-
-      return res.status(409).json({
-        success: false,
-        duplicate: true,
-        field: isSamePhone ? "phone" : "email",
-        message: isSamePhone
-          ? "We have already received your request with this mobile number. Our team will contact you shortly."
-          : "We have already received your request with this email. Our team will contact you shortly.",
-      });
+      return res.status(409).json(duplicateLeadResponse(existingLead, leadPhone));
     }
 
     const newLead = new newLeads({
