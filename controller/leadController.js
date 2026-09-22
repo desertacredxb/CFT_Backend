@@ -15,10 +15,41 @@ exports.createLead = async (req, res) => {
       status,
     } = req.body;
 
+    const leadPhone = (phone || mobile || "").trim();
+    const leadEmail = (email || "").trim().toLowerCase();
+
+    if (!leadPhone) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number is required.",
+      });
+    }
+
+    // Reject a second lead for the same mobile number or email
+    const duplicateFilters = [{ phone: leadPhone }];
+    if (leadEmail) {
+      duplicateFilters.push({ email: leadEmail });
+    }
+
+    const existingLead = await newLeads.findOne({ $or: duplicateFilters });
+
+    if (existingLead) {
+      const isSamePhone = existingLead.phone === leadPhone;
+
+      return res.status(409).json({
+        success: false,
+        duplicate: true,
+        field: isSamePhone ? "phone" : "email",
+        message: isSamePhone
+          ? "We have already received your request with this mobile number. Our team will contact you shortly."
+          : "We have already received your request with this email. Our team will contact you shortly.",
+      });
+    }
+
     const newLead = new newLeads({
       fullName: fullName || name,
-      phone: phone || mobile,
-      email,
+      phone: leadPhone,
+      email: leadEmail,
       city,
       marketSegment,
       referralcode,
