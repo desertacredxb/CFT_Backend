@@ -12,6 +12,7 @@ const authRoutes = require("./routes/auth.routes");
 const BlogRoute = require("./routes/blog.routes");
 const chatRoutes = require("./routes/chatRoutes");
 const leadRoutes = require("./routes/leadRoutes");
+const marketAIRoutes = require("./routes/marketAI.routes");
 
 require("dotenv").config();
 
@@ -35,6 +36,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/leads", leadRoutes);
 app.use("/api/blogs", BlogRoute);
 app.use("/api/chat", chatRoutes);
+app.use("/api/market-ai", marketAIRoutes);
 
 app.get("/", (req, res) => {
   res.send("API LIVE");
