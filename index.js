@@ -10,7 +10,7 @@ const subscriberRoutes = require("./routes/subscriber.routes");
 const popupLeadRoute = require("./routes/popup.routes");
 const authRoutes = require("./routes/auth.routes");
 const BlogRoute = require("./routes/blog.routes");
-const chatRoutes = require("./routes/chatRoutes");
+const chatRoutes = require("./routes/chatRoutes.js");
 const leadRoutes = require("./routes/leadRoutes");
 const marketAIRoutes = require("./routes/marketAI.routes");
 
